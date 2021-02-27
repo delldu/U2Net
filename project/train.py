@@ -15,8 +15,8 @@ import os
 
 import torch
 import torch.optim as optim
-from matting.data import get_data
-from matting.model import get_model, model_save, train_epoch, valid_epoch
+from data import get_data
+from model import get_model, model_save, train_epoch, valid_epoch
 
 if __name__ == "__main__":
     """Trainning model."""
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     parser.add_argument('--outputdir', type=str,
                         default="output", help="output directory")
     parser.add_argument('--checkpoint', type=str,
-                        default="output/matting.pth", help="checkpoint file")
+                        default="output/ImageMatting.pth", help="checkpoint file")
     parser.add_argument('--bs', type=int, default=8, help="batch size")
     parser.add_argument('--lr', type=float, default=1e-4, help="learning rate")
     parser.add_argument('--epochs', type=int, default=10)

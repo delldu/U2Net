@@ -13,15 +13,15 @@ import argparse
 import os
 
 import torch
-from matting.data import get_data
-from matting.model import get_model, valid_epoch
+from data import get_data
+from model import get_model, valid_epoch
 
 if __name__ == "__main__":
     """Test model."""
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--checkpoint', type=str,
-                        default="output/matting.pth", help="checkpoint file")
+                        default="output/ImageMatting.pth", help="checkpoint file")
     parser.add_argument('--bs', type=int, default=2, help="batch size")
     args = parser.parse_args()
 

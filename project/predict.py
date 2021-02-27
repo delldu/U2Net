@@ -11,28 +11,44 @@
 import argparse
 import glob
 import os
-
+import pdb
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
 from tqdm import tqdm
-from matting.model import get_model
+from data import get_transform
+from model import get_model, model_device
+
+def normal_predict(d):
+    ma = torch.max(d)
+    mi = torch.min(d)
+
+    dn = (d-mi)/(ma - mi + 1e-12)
+
+    return dn
 
 if __name__ == "__main__":
     """Predict."""
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--checkpoint', type=str, default="output/matting.pth", help="checkpint file")
-    parser.add_argument('--input', type=str, required=True, help="input image")
+    parser.add_argument('--checkpoint', type=str, default="models/ImageMatting.pth", help="checkpint file")
+    parser.add_argument('--input', type=str, default="dataset/predict/boat*.png", help="input image")
+    parser.add_argument('--output', type=str, default="output", help="output folder")
+
     args = parser.parse_args()
 
-    model, device = get_model(args.checkpoint)
+    # Create directory to store weights
+    if not os.path.exists(args.output):
+        os.makedirs(args.output)
+
+    model = get_model(args.checkpoint)
+    device = model_device()
     model.eval()
 
-    totensor = transforms.ToTensor()
+    totensor = get_transform(train=False)
     toimage = transforms.ToPILImage()
 
-    image_filenames = glob.glob(args.input)
+    image_filenames = sorted(glob.glob(args.input))
     progress_bar = tqdm(total = len(image_filenames))
 
     for index, filename in enumerate(image_filenames):
@@ -42,7 +58,9 @@ if __name__ == "__main__":
         input_tensor = totensor(image).unsqueeze(0).to(device)
 
         with torch.no_grad():
-            output_tensor = model(input_tensor).clamp(0, 1.0).squeeze()
+            output_tensor = model(input_tensor)
 
-        # xxxx--modify here
-        toimage(output_tensor.cpu()).show()
+        output_tensor = output_tensor[:,0,:,:]
+        output_tensor = normal_predict(output_tensor)
+
+        toimage(output_tensor.cpu()).save("{}/{}".format(args.output, os.path.basename(filename)))

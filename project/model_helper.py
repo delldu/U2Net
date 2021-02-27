@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import pdb
 
 class REBNCONV(nn.Module):
     def __init__(self,in_ch=3,out_ch=3,dirate=1):
@@ -96,7 +97,7 @@ class RSU7(nn.Module):#UNet07DRES(nn.Module):
         hx3dup = _upsample_like(hx3d,hx2)
 
         hx2d = self.rebnconv2d(torch.cat((hx3dup,hx2),1))
-        hx2dup = _upsample_like(hx2d,hx1)
+        hx2dup = _upsample_like(hx2d, hx1)
 
         hx1d = self.rebnconv1d(torch.cat((hx2dup,hx1),1))
 
@@ -510,36 +511,47 @@ class U2NETP(nn.Module):
         #decoder
         hx5d = self.stage5d(torch.cat((hx6up,hx5),1))
         hx5dup = _upsample_like(hx5d,hx4)
+        del hx6up
 
         hx4d = self.stage4d(torch.cat((hx5dup,hx4),1))
         hx4dup = _upsample_like(hx4d,hx3)
+        del hx5dup
 
         hx3d = self.stage3d(torch.cat((hx4dup,hx3),1))
-        hx3dup = _upsample_like(hx3d,hx2)
+        hx3dup = _upsample_like(hx3d, hx2)
+        del hx4dup
 
         hx2d = self.stage2d(torch.cat((hx3dup,hx2),1))
-        hx2dup = _upsample_like(hx2d,hx1)
+        hx2dup = _upsample_like(hx2d, hx1)
+        del hx3dup
 
-        hx1d = self.stage1d(torch.cat((hx2dup,hx1),1))
+        hx1d = self.stage1d(torch.cat((hx2dup, hx1),1))
+        del hx2dup
 
 
         #side output
         d1 = self.side1(hx1d)
+        del hx1d
 
         d2 = self.side2(hx2d)
         d2 = _upsample_like(d2,d1)
+        del hx2d
 
         d3 = self.side3(hx3d)
         d3 = _upsample_like(d3,d1)
+        del hx3d
 
         d4 = self.side4(hx4d)
         d4 = _upsample_like(d4,d1)
+        del hx4d
 
         d5 = self.side5(hx5d)
         d5 = _upsample_like(d5,d1)
+        del hx5d
 
         d6 = self.side6(hx6)
         d6 = _upsample_like(d6,d1)
+        del hx6
 
         d0 = self.outconv(torch.cat((d1,d2,d3,d4,d5,d6),1))
 
@@ -549,5 +561,7 @@ class U2NETP(nn.Module):
         self.d4 = F.sigmoid(d4)
         self.d5 = F.sigmoid(d5)
         self.d6 = F.sigmoid(d6)
+
+        torch.cuda.empty_cache()
 
         return F.sigmoid(d0)
