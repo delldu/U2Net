@@ -16,21 +16,7 @@ import sys
 import torch
 import torch.nn as nn
 from tqdm import tqdm
-
-
-class mattingModel(nn.Module):
-    """matting Model."""
-
-    def __init__(self):
-        """Init model."""
-
-        super(mattingModel, self).__init__()
-
-    def forward(self, x):
-        """Forward."""
-
-        return x
-
+from model_helper import U2NET, U2NETP
 
 def model_load(model, path):
     """Load model."""
@@ -62,12 +48,10 @@ def export_onnx():
     from onnx import optimizer
     import numpy as np
 
-    onnx_file_name = "output/model.onnx"
-    model_weight_file = 'models/model.pth'
-    dummy_input = torch.randn(1, 3, 512, 512)
+    onnx_file_name = "output/image_matting.onnx"
+    model_weight_file = 'models/ImageMatting.pth'
 
     # 1. Create and load model.
-    model_setenv()
     torch_model = get_model(model_weight_file)
     torch_model.eval()
 
@@ -80,6 +64,7 @@ def export_onnx():
                     'output': {2: "height", 3: 'width'}
                     }
 
+    dummy_input = torch.randn(1, 3, 512, 512).to(model_device())
     torch.onnx.export(torch_model, dummy_input, onnx_file_name,
                   input_names=input_names,
                   output_names=output_names,
@@ -104,19 +89,18 @@ def verify_onnx():
     import onnxruntime
     import numpy as np
 
-    model_weight_file = 'models/model.pth'
+    model_weight_file = 'models/ImageMatting.pth'
 
-    model_setenv()
     torch_model = get_model(model_weight_file)
     torch_model.eval()
 
-    onnx_file_name = "output/model.onnx"
+    onnx_file_name = "output/image_matting.onnx"
     onnxruntime_engine = onnxruntime.InferenceSession(onnx_file_name)
 
     def to_numpy(tensor):
         return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
-    dummy_input = torch.randn(1, 3, 512, 512)
+    dummy_input = torch.randn(1, 3, 512, 512).to(model_device())
     with torch.no_grad():
         torch_output = torch_model(dummy_input)
     onnxruntime_inputs = {onnxruntime_engine.get_inputs()[0].name: to_numpy(dummy_input)}
@@ -125,7 +109,7 @@ def verify_onnx():
     print("Example1: Onnx model has been tested with ONNXRuntime, the result looks good !")
 
     # Test dynamic axes
-    dummy_input = torch.randn(1, 3, 512, 511)
+    dummy_input = torch.randn(1, 3, 512, 511).to(model_device())
     with torch.no_grad():
         torch_output = torch_model(dummy_input)
     onnxruntime_inputs = {onnxruntime_engine.get_inputs()[0].name: to_numpy(dummy_input)}
@@ -133,7 +117,7 @@ def verify_onnx():
     np.testing.assert_allclose(to_numpy(torch_output), onnxruntime_outputs[0], rtol=1e-02, atol=1e-02)
     print("Example2: Onnx model has been tested with ONNXRuntime, the result looks good!")
 
-    dummy_input = torch.randn(1, 3, 1024, 1024)
+    dummy_input = torch.randn(1, 3, 1024, 1024).to(model_device())
     with torch.no_grad():
         torch_output = torch_model(dummy_input)
     onnxruntime_inputs = {onnxruntime_engine.get_inputs()[0].name: to_numpy(dummy_input)}
@@ -146,11 +130,11 @@ def export_torch():
     """Export torch model."""
 
     script_file = "output/model.pt"
-    weight_file = "models/model.pth"
+    weight_file = "models/ImageMatting.pth"
 
     # 1. Load model
     print("Loading model ...")
-    model, device = get_model(weight_file)
+    model = get_model(weight_file)
     model.eval()
 
     # 2. Model export
@@ -164,12 +148,13 @@ def get_model(checkpoint):
     """Create model."""
 
     model_setenv()
-    model = mattingModel()
+    # model = U2NET(3,1)
+    model = U2NETP(3,1)
     model_load(model, checkpoint)
     device = model_device()
     model.to(device)
 
-    return model, device
+    return model
 
 
 class Counter(object):

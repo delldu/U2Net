@@ -51,12 +51,12 @@ def get_transform(train=True):
     ts.append(T.ToTensor())
     return T.Compose(ts)
 
-class mattingDataset(data.Dataset):
+class MattingDataset(data.Dataset):
     """Define dataset."""
 
     def __init__(self, root, transforms=get_transform()):
         """Init dataset."""
-        super(mattingDataset, self).__init__()
+        super(MattingDataset, self).__init__()
 
         self.root = root
         self.transforms = transforms
@@ -93,7 +93,7 @@ class mattingDataset(data.Dataset):
 def train_data(bs):
     """Get data loader for trainning & validating, bs means batch_size."""
 
-    train_ds = mattingDataset(train_dataset_rootdir, get_transform(train=True))
+    train_ds = MattingDataset(train_dataset_rootdir, get_transform(train=True))
     print(train_ds)
 
     # Split train_ds in train and valid set
@@ -114,7 +114,7 @@ def train_data(bs):
 def test_data(bs):
     """Get data loader for test, bs means batch_size."""
 
-    test_ds = mattingDataset(test_dataset_rootdir, get_transform(train=False))
+    test_ds = MattingDataset(test_dataset_rootdir, get_transform(train=False))
     test_dl = data.DataLoader(test_ds, batch_size=bs, shuffle=False, num_workers=4)
 
     return test_dl
@@ -128,7 +128,7 @@ def get_data(trainning=True, bs=4):
 def mattingDatasetTest():
     """Test dataset ..."""
 
-    ds = mattingDataset(train_dataset_rootdir)
+    ds = MattingDataset(train_dataset_rootdir)
     print(ds)
     # src, tgt = ds[0]
     # grid = utils.make_grid(torch.cat([src.unsqueeze(0), tgt.unsqueeze(0)], dim=0), nrow=2)
