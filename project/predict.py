@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--checkpoint', type=str, default="models/ImageMatting.pth", help="checkpint file")
-    parser.add_argument('--input', type=str, default="dataset/predict/boat*.png", help="input image")
+    parser.add_argument('--input', type=str, default="dataset/predict/*.png", help="input image")
     parser.add_argument('--output', type=str, default="output", help="output folder")
 
     args = parser.parse_args()
@@ -55,7 +55,8 @@ if __name__ == "__main__":
         progress_bar.update(1)
 
         image = Image.open(filename).convert("RGB")
-        input_tensor = totensor(image).unsqueeze(0).to(device)
+        input_image = image.resize((320, 320))
+        input_tensor = totensor(input_image).unsqueeze(0).to(device)
 
         with torch.no_grad():
             output_tensor = model(input_tensor)
@@ -63,4 +64,7 @@ if __name__ == "__main__":
         output_tensor = output_tensor[:,0,:,:]
         output_tensor = normal_predict(output_tensor)
 
-        toimage(output_tensor.cpu()).save("{}/{}".format(args.output, os.path.basename(filename)))
+        output_image = toimage(output_tensor.cpu())
+        output_image = output_image.resize((image.width, image.height))
+
+        output_image.save("{}/{}".format(args.output, os.path.basename(filename)))
